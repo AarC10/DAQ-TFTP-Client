@@ -1,8 +1,25 @@
+/**
+TFTP client that reads and writes config files
+*/
+
 package main
 
+type IPConfig struct {
+	src string
+	dst string
+	gw string
+	subnet string
+}
+
+type UDPConfig struct {
+	src string
+	adc0 string
+	adc1 string
+	tc string
+}
+
 import (
-	"fmt"
-	"os"
+	"net"
 )
 
 func check(e error) {
@@ -11,18 +28,15 @@ func check(e error) {
 	}
 }
 
+func readConfig() {
+
+
+}
+
+func writeConfig() {
+
+}
+
 func main() {
-	var host string
-	var destination string
-
-	fmt.Scanln(&host)
-	fmt.Scanln(&destination)
-
-	fmt.Println(host)
-	fmt.Println(destination)
-
-	configText := "ip.src=" + host + "\nip.dst=" + destination
-	err := os.WriteFile("config", []byte(configText), 0666)
-	check(err)
 
 }
