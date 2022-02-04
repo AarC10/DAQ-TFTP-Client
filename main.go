@@ -6,11 +6,17 @@ package main
 
 import (
 	"fmt"
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"io/ioutil"
 	"net"
+	"net/http"
 	"os"
 )
 
-const broadcastAddress string = "255.255.255.255.69"
+const broadcastAddress string = "127.0.0.1:69"
+
+var client *http.Client
 
 func check(e error) {
 	if e != nil {
@@ -47,34 +53,63 @@ func createConfig() {
 
 }
 
+func readBytes(conn *net.UDPConn, buffer []byte) {
+	_, addr, err := conn.ReadFromUDP(buffer)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Received ", string(buffer), " from ", addr)
+}
+
 func sendFile(fileName string) {
 
 	// Open file
-	file, err := os.Open(fileName)
+	//file, err := os.Open(fileName)
+	file, err := ioutil.ReadFile(fileName)
 	check(err)
-	defer file.Close()
+	//defer func(file *os.File) {
+	//	err := file.Close()
+	//	if err != nil {
+	//
+	//	}
+	//}(file)
 
 	// Create a buffer to store the file's contents
-	fileInfo, err := file.Stat()
-	check(err)
+	//fileInfo, err := file.Stat()
+	//check(err)
 
 	// Get file size and create a buffer of that size
-	fileSize := fileInfo.Size()
-	fileData := make([]byte, fileSize)
-	_, err = file.Read(fileData)
-	check(err)
+	//fileSize := fileInfo.Size()
+	//fileData := make([]byte, fileSize)
+	//_, err = file.Read(fileData)
+	//check(err)
 
 	// Create a UDP connection
 	conn, err := net.Dial("udp", broadcastAddress)
 	check(err)
-	defer conn.Close()
+	defer func(conn net.Conn) {
+		err := conn.Close()
+		if err != nil {
+
+		}
+	}(conn)
 
 	// Send the file
-	_, err = conn.Write(fileData)
+	_, err = conn.Write(file)
 	check(err)
 }
 
 func main() {
-	sendFile("config")
+	client = &http.Client{}
+	gui := app.New()
+
+	window := gui.NewWindow("RIT Launch Initiative TFTP Client")
+	window.Resize(fyne.NewSize(1920, 1080))
+
+	//createConfig()
+	//sendFile("config")
+
+	window.ShowAndRun()
 
 }
