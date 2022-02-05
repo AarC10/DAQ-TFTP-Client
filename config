@@ -1,8 +1,8 @@
-ip.src=11
-ip.dst=21
-ip.gw=41
-ip.subnet=11
-udp.src=51
-udp.adc0=61
-udp.adc1=61
-udp.tc=61
+ip.src=10
+ip.dst=10
+ip.gw=10
+ip.subnet=10
+udp.src=10
+udp.adc0=10
+udp.adc1=10
+udp.tc=10

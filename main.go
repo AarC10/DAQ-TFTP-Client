@@ -16,9 +16,19 @@ import (
 	"time"
 )
 
-const broadcastAddress string = "localhost:69"
-
 var client *http.Client
+
+type config struct {
+	srcIP    string
+	dstIP    string
+	gwIP     string
+	subnetIP string
+
+	srcUDP  string
+	adc0UDP string
+	adc1UDP string
+	tcpUDP  string
+}
 
 func check(e error) {
 	if e != nil {
@@ -26,7 +36,8 @@ func check(e error) {
 	}
 }
 
-func uploadFile() {
+func uploadFile(broadcastAddress string) {
+	println(broadcastAddress)
 	c, err := tftp.NewClient(broadcastAddress)
 	check(err)
 
@@ -43,7 +54,7 @@ func uploadFile() {
 	fmt.Printf("%d bytes sent\n", n)
 }
 
-func getFile() {
+func getFile(broadcastAddress string) {
 	c, err := tftp.NewClient(broadcastAddress)
 	check(err)
 
@@ -85,17 +96,36 @@ func main() {
 	window := gui.NewWindow("RIT Launch Initiative TFTP Client")
 	window.Resize(fyne.NewSize(1920, 1080))
 
+	broadcastTo := widget.NewEntry()
+	broadcastTo.SetText("localhost:69")
+
 	srcIP := widget.NewEntry()
+	srcIP.SetPlaceHolder("Source IP")
+
 	dstIP := widget.NewEntry()
+	dstIP.SetPlaceHolder("Destination IP")
+
 	gwIP := widget.NewEntry()
+	gwIP.SetPlaceHolder("Gateway IP")
+
 	subnetIP := widget.NewEntry()
+	subnetIP.SetPlaceHolder("Subnet IP")
+
 	srcUDP := widget.NewEntry()
+	srcUDP.SetPlaceHolder("Source UDP Port")
+
 	adc0UDP := widget.NewEntry()
+	adc0UDP.SetPlaceHolder("ADC0 UDP Port")
+
 	adc1UDP := widget.NewEntry()
+	adc1UDP.SetPlaceHolder("ADC1 UDP Port")
+
 	tcpUDP := widget.NewEntry()
+	tcpUDP.SetPlaceHolder("TCP UDP Port")
 
 	window.SetContent(
 		container.NewVBox(
+			broadcastTo,
 			srcIP,
 			dstIP,
 			gwIP,
@@ -109,13 +139,14 @@ func main() {
 			}),
 
 			widget.NewButton("Get File", func() {
-				getFile()
+				getFile(broadcastTo.Text)
 			}),
 
 			widget.NewButton("Upload File", func() {
-				uploadFile()
+				uploadFile(broadcastTo.Text)
 			}),
 		),
 	)
+
 	window.ShowAndRun()
 }
