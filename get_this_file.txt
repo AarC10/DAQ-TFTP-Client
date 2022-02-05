@@ -1,1 +1,8 @@
-Test Send
+ip.src=10
+ip.dst=0
+ip.gw=0
+ip.subnet=0
+udp.src=0
+udp.adc0=0
+udp.adc1=0
+udp.tc=0

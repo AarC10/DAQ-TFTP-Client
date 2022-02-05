@@ -6,6 +6,9 @@ package main
 
 import (
 	"fmt"
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"gitlab.com/rackn/tftp/v3"
 	"net/http"
@@ -27,11 +30,11 @@ func uploadFile() {
 	c, err := tftp.NewClient(broadcastAddress)
 	check(err)
 
-	file, err := os.Open("get_this_file.txt")
+	file, err := os.Open("config")
 	check(err)
 
-	c.SetTimeout(5 * time.Second) // optional
-	rf, err := c.Send("get_this_file.txt", "octet")
+	c.SetTimeout(5 * time.Second)
+	rf, err := c.Send("config", "octet")
 	check(err)
 
 	n, err := rf.ReadFrom(file)
@@ -44,10 +47,10 @@ func getFile() {
 	c, err := tftp.NewClient(broadcastAddress)
 	check(err)
 
-	wt, err := c.Receive("get_this_file.txt", "octet")
+	wt, err := c.Receive("config", "octet")
 	check(err)
 
-	file, err := os.Create("get_this_file.txt")
+	file, err := os.Create("config")
 	check(err)
 
 	n, err := wt.WriteTo(file)
@@ -56,83 +59,63 @@ func getFile() {
 	fmt.Printf("File Recieved. %d bytes received\n", n)
 }
 
-func createConfig() {
-	//var srcIP, dstIP, gswIP, subnetIP, srcUDP, adc0UDP, adc1UDP, tcpUDP string
-	//
-	//fmt.Scanln(&srcIP)
-	//fmt.Scanln(&dstIP)
-	//fmt.Scanln(&gswIP)
-	//fmt.Scanln(&subnetIP)
-	//
-	//fmt.Scanln(&srcUDP)
-	//fmt.Scanln(&adc0UDP)
-	//fmt.Scanln(&adc1UDP)
-	//fmt.Scanln(&tcpUDP)
-	//
-	//configString := "ip.src=" + srcIP + "\n" +
-	//	"ip.dst=" + dstIP + "\n" +
-	//	"ip.gw=" + gswIP + "\n" +
-	//	"ip.subnet=" + subnetIP + "\n" +
-	//	"udp.src=" + srcUDP + "\n" +
-	//	"udp.adc0=" + adc0UDP + "\n" +
-	//	"udp.adc1=" + adc1UDP + "\n" +
-	//	"udp.tc=" + tcpUDP + "\n"
-	//
-	//err := os.WriteFile("config", []byte(configString), 0666)
-	//if err != nil {
-	//	return
-	//}
+func createConfig(srcIP, dstIP, gswIP, subnetIP, srcUDP, adc0UDP, adc1UDP, tcpUDP string) {
 
-}
+	configString := "ip.src=" + srcIP + "\n" +
+		"ip.dst=" + dstIP + "\n" +
+		"ip.gw=" + gswIP + "\n" +
+		"ip.subnet=" + subnetIP + "\n" +
+		"udp.src=" + srcUDP + "\n" +
+		"udp.adc0=" + adc0UDP + "\n" +
+		"udp.adc1=" + adc1UDP + "\n" +
+		"udp.tc=" + tcpUDP + "\n"
 
-func sendFile(fileName string) {
+	err := os.WriteFile("config", []byte(configString), 0666)
 
-}
-
-func printButton(config widget.Form) {
-	fmt.Println(config.Items)
+	if err != nil {
+		return
+	}
 
 }
 
 func main() {
 
-	//gui := app.New()
+	gui := app.New()
 	//
-	//window := gui.NewWindow("RIT Launch Initiative TFTP Client")
-	//window.Resize(fyne.NewSize(1920, 500))
-	//
-	//config := widget.NewForm(
-	//	widget.NewFormItem("IP Source", widget.NewEntry()),
-	//	widget.NewFormItem("IP Destination", widget.NewEntry()),
-	//	widget.NewFormItem("IP Gateway", widget.NewEntry()),
-	//	widget.NewFormItem("IP Subnet", widget.NewEntry()),
-	//	widget.NewFormItem("UDP Source", widget.NewEntry()),
-	//	widget.NewFormItem("UDP ADC0", widget.NewEntry()),
-	//	widget.NewFormItem("UDP ADC1", widget.NewEntry()),
-	//	widget.NewFormItem("UDP TCP", widget.NewEntry()),
-	//)
-	//
-	//writeButton := widget.NewButton("Write", func() {
-	//	fmt.Println(config)
-	//})
-	//
-	//readButton := widget.NewButton("Read", func() {
-	//
-	//})
-	//
-	////createConfig()
-	////sendFile("config")
-	//
-	//window.SetContent(
-	//	container.NewVBox(
-	//		config,
-	//		writeButton,
-	//		readButton,
-	//	),
-	//)
-	//window.ShowAndRun()
+	window := gui.NewWindow("RIT Launch Initiative TFTP Client")
+	window.Resize(fyne.NewSize(1920, 1080))
 
-	//getFile()
+	srcIP := widget.NewEntry()
+	dstIP := widget.NewEntry()
+	gwIP := widget.NewEntry()
+	subnetIP := widget.NewEntry()
+	srcUDP := widget.NewEntry()
+	adc0UDP := widget.NewEntry()
+	adc1UDP := widget.NewEntry()
+	tcpUDP := widget.NewEntry()
 
-	uploadFile()
+	window.SetContent(
+		container.NewVBox(
+			srcIP,
+			dstIP,
+			gwIP,
+			subnetIP,
+			srcUDP,
+			adc0UDP,
+			adc1UDP,
+			tcpUDP,
+			widget.NewButton("Create Config", func() {
+				createConfig(srcIP.Text, dstIP.Text, gwIP.Text, subnetIP.Text, srcUDP.Text, adc0UDP.Text, adc1UDP.Text, tcpUDP.Text)
+			}),
+
+			widget.NewButton("Get File", func() {
+				getFile()
+			}),
+
+			widget.NewButton("Upload File", func() {
+				uploadFile()
+			}),
+		),
+	)
+	window.ShowAndRun()
 }
