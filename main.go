@@ -6,15 +6,14 @@ package main
 
 import (
 	"fmt"
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/app"
-	"io/ioutil"
-	"net"
+	"fyne.io/fyne/v2/widget"
+	"gitlab.com/rackn/tftp/v3"
 	"net/http"
 	"os"
+	"time"
 )
 
-const broadcastAddress string = "127.0.0.1:69"
+const broadcastAddress string = "localhost:69"
 
 var client *http.Client
 
@@ -24,92 +23,116 @@ func check(e error) {
 	}
 }
 
-func createConfig() {
-	var srcIP, dstIP, gswIP, subnetIP, srcUDP, adc0UDP, adc1UDP, tcpUDP string
+func uploadFile() {
+	c, err := tftp.NewClient(broadcastAddress)
+	check(err)
 
-	fmt.Scanln(&srcIP)
-	fmt.Scanln(&dstIP)
-	fmt.Scanln(&gswIP)
-	fmt.Scanln(&subnetIP)
+	file, err := os.Open("get_this_file.txt")
+	check(err)
 
-	fmt.Scanln(&srcUDP)
-	fmt.Scanln(&adc0UDP)
-	fmt.Scanln(&adc1UDP)
-	fmt.Scanln(&tcpUDP)
+	c.SetTimeout(5 * time.Second) // optional
+	rf, err := c.Send("get_this_file.txt", "octet")
+	check(err)
 
-	configString := "ip.src=" + srcIP + "\n" +
-		"ip.dst=" + dstIP + "\n" +
-		"ip.gw=" + gswIP + "\n" +
-		"ip.subnet=" + subnetIP + "\n" +
-		"udp.src=" + srcUDP + "\n" +
-		"udp.adc0=" + adc0UDP + "\n" +
-		"udp.adc1=" + adc1UDP + "\n" +
-		"udp.tc=" + tcpUDP + "\n"
+	n, err := rf.ReadFrom(file)
+	check(err)
 
-	err := os.WriteFile("config", []byte(configString), 0666)
-	if err != nil {
-		return
-	}
-
+	fmt.Printf("%d bytes sent\n", n)
 }
 
-func readBytes(conn *net.UDPConn, buffer []byte) {
-	_, addr, err := conn.ReadFromUDP(buffer)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println("Received ", string(buffer), " from ", addr)
+func getFile() {
+	c, err := tftp.NewClient(broadcastAddress)
+	check(err)
+
+	wt, err := c.Receive("get_this_file.txt", "octet")
+	check(err)
+
+	file, err := os.Create("get_this_file.txt")
+	check(err)
+
+	n, err := wt.WriteTo(file)
+	check(err)
+
+	fmt.Printf("File Recieved. %d bytes received\n", n)
+}
+
+func createConfig() {
+	//var srcIP, dstIP, gswIP, subnetIP, srcUDP, adc0UDP, adc1UDP, tcpUDP string
+	//
+	//fmt.Scanln(&srcIP)
+	//fmt.Scanln(&dstIP)
+	//fmt.Scanln(&gswIP)
+	//fmt.Scanln(&subnetIP)
+	//
+	//fmt.Scanln(&srcUDP)
+	//fmt.Scanln(&adc0UDP)
+	//fmt.Scanln(&adc1UDP)
+	//fmt.Scanln(&tcpUDP)
+	//
+	//configString := "ip.src=" + srcIP + "\n" +
+	//	"ip.dst=" + dstIP + "\n" +
+	//	"ip.gw=" + gswIP + "\n" +
+	//	"ip.subnet=" + subnetIP + "\n" +
+	//	"udp.src=" + srcUDP + "\n" +
+	//	"udp.adc0=" + adc0UDP + "\n" +
+	//	"udp.adc1=" + adc1UDP + "\n" +
+	//	"udp.tc=" + tcpUDP + "\n"
+	//
+	//err := os.WriteFile("config", []byte(configString), 0666)
+	//if err != nil {
+	//	return
+	//}
+
 }
 
 func sendFile(fileName string) {
 
-	// Open file
-	//file, err := os.Open(fileName)
-	file, err := ioutil.ReadFile(fileName)
-	check(err)
-	//defer func(file *os.File) {
-	//	err := file.Close()
-	//	if err != nil {
-	//
-	//	}
-	//}(file)
+}
 
-	// Create a buffer to store the file's contents
-	//fileInfo, err := file.Stat()
-	//check(err)
+func printButton(config widget.Form) {
+	fmt.Println(config.Items)
 
-	// Get file size and create a buffer of that size
-	//fileSize := fileInfo.Size()
-	//fileData := make([]byte, fileSize)
-	//_, err = file.Read(fileData)
-	//check(err)
-
-	// Create a UDP connection
-	conn, err := net.Dial("udp", broadcastAddress)
-	check(err)
-	defer func(conn net.Conn) {
-		err := conn.Close()
-		if err != nil {
-
-		}
-	}(conn)
-
-	// Send the file
-	_, err = conn.Write(file)
-	check(err)
 }
 
 func main() {
-	client = &http.Client{}
-	gui := app.New()
 
-	window := gui.NewWindow("RIT Launch Initiative TFTP Client")
-	window.Resize(fyne.NewSize(1920, 1080))
+	//gui := app.New()
+	//
+	//window := gui.NewWindow("RIT Launch Initiative TFTP Client")
+	//window.Resize(fyne.NewSize(1920, 500))
+	//
+	//config := widget.NewForm(
+	//	widget.NewFormItem("IP Source", widget.NewEntry()),
+	//	widget.NewFormItem("IP Destination", widget.NewEntry()),
+	//	widget.NewFormItem("IP Gateway", widget.NewEntry()),
+	//	widget.NewFormItem("IP Subnet", widget.NewEntry()),
+	//	widget.NewFormItem("UDP Source", widget.NewEntry()),
+	//	widget.NewFormItem("UDP ADC0", widget.NewEntry()),
+	//	widget.NewFormItem("UDP ADC1", widget.NewEntry()),
+	//	widget.NewFormItem("UDP TCP", widget.NewEntry()),
+	//)
+	//
+	//writeButton := widget.NewButton("Write", func() {
+	//	fmt.Println(config)
+	//})
+	//
+	//readButton := widget.NewButton("Read", func() {
+	//
+	//})
+	//
+	////createConfig()
+	////sendFile("config")
+	//
+	//window.SetContent(
+	//	container.NewVBox(
+	//		config,
+	//		writeButton,
+	//		readButton,
+	//	),
+	//)
+	//window.ShowAndRun()
 
-	//createConfig()
-	//sendFile("config")
+	//getFile()
 
-	window.ShowAndRun()
-
+	uploadFile()
 }

@@ -2,7 +2,10 @@ module tftp.com/client
 
 go 1.17
 
-require fyne.io/fyne/v2 v2.1.2
+require (
+	fyne.io/fyne/v2 v2.1.2
+	gitlab.com/rackn/tftp/v3 v3.1.2
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -18,8 +21,8 @@ require (
 	github.com/stretchr/testify v1.5.1 // indirect
 	github.com/yuin/goldmark v1.3.8 // indirect
 	golang.org/x/image v0.0.0-20200430140353-33d19683fad8 // indirect
-	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
-	golang.org/x/text v0.3.3 // indirect
+	golang.org/x/net v0.0.0-20210903162142-ad29c8ab022f // indirect
+	golang.org/x/sys v0.0.0-20210903071746-97244b99971b // indirect
+	golang.org/x/text v0.3.6 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
