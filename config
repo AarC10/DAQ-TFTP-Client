@@ -1,8 +1,0 @@
-ip.src=10
-ip.dst=10
-ip.gw=10
-ip.subnet=10
-udp.src=10
-udp.adc0=10
-udp.adc1=10
-udp.tc=10

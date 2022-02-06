@@ -19,15 +19,15 @@ import (
 var client *http.Client
 
 type config struct {
-	srcIP    string
-	dstIP    string
-	gwIP     string
-	subnetIP string
+	srcIP    *widget.Entry
+	dstIP    *widget.Entry
+	gwIP     *widget.Entry
+	subnetIP *widget.Entry
 
-	srcUDP  string
-	adc0UDP string
-	adc1UDP string
-	tcpUDP  string
+	srcUDP  *widget.Entry
+	adc0UDP *widget.Entry
+	adc1UDP *widget.Entry
+	tcpUDP  *widget.Entry
 }
 
 func check(e error) {
@@ -70,23 +70,30 @@ func getFile(broadcastAddress string) {
 	fmt.Printf("File Recieved. %d bytes received\n", n)
 }
 
-func createConfig(srcIP, dstIP, gswIP, subnetIP, srcUDP, adc0UDP, adc1UDP, tcpUDP string) {
+func createConfig(configData *config) {
+	configString := ""
 
-	configString := "ip.src=" + srcIP + "\n" +
-		"ip.dst=" + dstIP + "\n" +
-		"ip.gw=" + gswIP + "\n" +
-		"ip.subnet=" + subnetIP + "\n" +
-		"udp.src=" + srcUDP + "\n" +
-		"udp.adc0=" + adc0UDP + "\n" +
-		"udp.adc1=" + adc1UDP + "\n" +
-		"udp.tc=" + tcpUDP + "\n"
-
-	err := os.WriteFile("config", []byte(configString), 0666)
-
-	if err != nil {
-		return
+	configSlice := []string{
+		"ip.src=" + configData.srcIP.Text,
+		"ip.dst=" + configData.dstIP.Text,
+		"ip.gw=" + configData.gwIP.Text,
+		"ip.subnet=" + configData.subnetIP.Text,
+		"udp.src=" + configData.srcUDP.Text,
+		"udp.adc0=" + configData.adc0UDP.Text,
+		"udp.adc1=" + configData.adc1UDP.Text,
+		"udp.tcp=" + configData.tcpUDP.Text,
 	}
 
+	for _, v := range configSlice {
+		if v[len(v)-1] != '=' {
+			configString += v + "\n"
+		}
+	}
+
+	err := os.WriteFile("config", []byte(configString), 0666)
+	check(err)
+
+	fmt.Println(configString)
 }
 
 func main() {
@@ -123,6 +130,17 @@ func main() {
 	tcpUDP := widget.NewEntry()
 	tcpUDP.SetPlaceHolder("TCP UDP Port")
 
+	configData := config{
+		srcIP:    srcIP,
+		dstIP:    dstIP,
+		gwIP:     gwIP,
+		subnetIP: subnetIP,
+		srcUDP:   srcUDP,
+		adc0UDP:  adc0UDP,
+		adc1UDP:  adc1UDP,
+		tcpUDP:   tcpUDP,
+	}
+
 	window.SetContent(
 		container.NewVBox(
 			broadcastTo,
@@ -135,7 +153,7 @@ func main() {
 			adc1UDP,
 			tcpUDP,
 			widget.NewButton("Create Config", func() {
-				createConfig(srcIP.Text, dstIP.Text, gwIP.Text, subnetIP.Text, srcUDP.Text, adc0UDP.Text, adc1UDP.Text, tcpUDP.Text)
+				createConfig(&configData)
 			}),
 
 			widget.NewButton("Get File", func() {
