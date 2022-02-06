@@ -17,3 +17,4 @@
 # Output files
 *.txt
 config
+received_config

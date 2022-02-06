@@ -1,5 +1,7 @@
 /**
-TFTP client that reads and writes config files
+TFTP client that reads and writes config files.
+
+@author Aaron Chan, RIT Launch Initiative's Future Star Programmer 😎
 */
 
 package main
@@ -15,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -56,7 +59,7 @@ func uploadFile(broadcastAddress string) {
 	fmt.Printf("%d bytes sent\n", n)
 }
 
-func getFile(broadcastAddress string) {
+func getFile(broadcastAddress string, configData *config) {
 	c, err := tftp.NewClient(broadcastAddress)
 	check(err)
 
@@ -68,6 +71,29 @@ func getFile(broadcastAddress string) {
 
 	n, err := wt.WriteTo(file)
 	check(err)
+
+	fileString, err := os.ReadFile("config")
+	check(err)
+
+	for _, line := range strings.Split(string(fileString), "\n") {
+		if strings.Contains(line, "ip.src") {
+			configData.srcIP.SetText(line[7:])
+		} else if strings.Contains(line, "ip.dst") {
+			configData.dstIP.SetText(line[7:])
+		} else if strings.Contains(line, "ip.gw") {
+			configData.gwIP.SetText(line[6:])
+		} else if strings.Contains(line, "ip.subnet") {
+			configData.subnetIP.SetText(line[10:])
+		} else if strings.Contains(line, "udp.src") {
+			configData.srcUDP.SetText(line[8:])
+		} else if strings.Contains(line, "udp.adc0") {
+			configData.adc0UDP.SetText(line[9:])
+		} else if strings.Contains(line, "udp.adc1") {
+			configData.adc1UDP.SetText(line[9:])
+		} else if strings.Contains(line, "udp.tcp") {
+			configData.tcpUDP.SetText(line[8:])
+		}
+	}
 
 	fmt.Printf("File Recieved. %d bytes received\n", n)
 }
@@ -111,7 +137,7 @@ func ipAddrValidator(ip string) error {
 
 func portValidator(port string) error {
 	re := regexp.MustCompile(`^[0-9]{1,5}$`)
-	if re.Match([]byte(port)) {
+	if re.Match([]byte(port)) || port == "" {
 		return nil
 	}
 
@@ -221,7 +247,7 @@ func main() {
 			}),
 
 			widget.NewButton("Get File", func() {
-				getFile(broadcastTo.Text)
+				getFile(broadcastTo.Text, &configData)
 			}),
 
 			widget.NewButton("Upload File", func() {
