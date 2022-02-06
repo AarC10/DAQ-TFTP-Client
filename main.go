@@ -96,39 +96,31 @@ func createConfig(configData *config) {
 	fmt.Println(configString)
 }
 
+func makeEntryField(text string) *widget.Entry {
+	newField := widget.NewEntry()
+	newField.SetPlaceHolder(text)
+
+	return newField
+}
+
 func main() {
 
 	gui := app.New()
-	//
+
 	window := gui.NewWindow("RIT Launch Initiative TFTP Client")
 	window.Resize(fyne.NewSize(1920, 1080))
 
 	broadcastTo := widget.NewEntry()
 	broadcastTo.SetText("localhost:69")
 
-	srcIP := widget.NewEntry()
-	srcIP.SetPlaceHolder("Source IP")
-
-	dstIP := widget.NewEntry()
-	dstIP.SetPlaceHolder("Destination IP")
-
-	gwIP := widget.NewEntry()
-	gwIP.SetPlaceHolder("Gateway IP")
-
-	subnetIP := widget.NewEntry()
-	subnetIP.SetPlaceHolder("Subnet IP")
-
-	srcUDP := widget.NewEntry()
-	srcUDP.SetPlaceHolder("Source UDP Port")
-
-	adc0UDP := widget.NewEntry()
-	adc0UDP.SetPlaceHolder("ADC0 UDP Port")
-
-	adc1UDP := widget.NewEntry()
-	adc1UDP.SetPlaceHolder("ADC1 UDP Port")
-
-	tcpUDP := widget.NewEntry()
-	tcpUDP.SetPlaceHolder("TCP UDP Port")
+	srcIP := makeEntryField("Source IP")
+	dstIP := makeEntryField("Destination IP")
+	gwIP := makeEntryField("Gateway IP")
+	subnetIP := makeEntryField("Subnet IP")
+	srcUDP := makeEntryField("Source UDP Port")
+	adc0UDP := makeEntryField("ADC0 UDP Port")
+	adc1UDP := makeEntryField("ADC1 UDP Port")
+	tcpUDP := makeEntryField("TCP Port")
 
 	configData := config{
 		srcIP:    srcIP,
