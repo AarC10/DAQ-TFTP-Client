@@ -23,6 +23,7 @@ import (
 
 var client *http.Client
 
+// Struct representing config file entries
 type config struct {
 	srcIP    *widget.Entry
 	dstIP    *widget.Entry
@@ -35,41 +36,49 @@ type config struct {
 	tcpUDP  *widget.Entry
 }
 
+/**
+Error Handling
+*/
 func check(e error) {
 	if e != nil {
 		panic(e)
 	}
 }
 
+/**
+Uploads files to given broadcast address
+*/
 func uploadFile(broadcastAddress string) {
-	println(broadcastAddress)
-	c, err := tftp.NewClient(broadcastAddress)
+	client, err := tftp.NewClient(broadcastAddress)
 	check(err)
 
 	file, err := os.Open("config")
 	check(err)
 
-	c.SetTimeout(5 * time.Second)
-	rf, err := c.Send("config", "octet")
+	client.SetTimeout(5 * time.Second)
+	readFrom, err := client.Send("config", "octet")
 	check(err)
 
-	n, err := rf.ReadFrom(file)
+	bytesSent, err := readFrom.ReadFrom(file)
 	check(err)
 
-	fmt.Printf("%d bytes sent\n", n)
+	fmt.Printf("%d bytes sent\n", bytesSent)
 }
 
-func getFile(broadcastAddress string, configData *config) {
-	c, err := tftp.NewClient(broadcastAddress)
+/**
+Receives a file from the given broadcast address and inputs it into the text boxes
+*/
+func receiveFile(broadcastAddress string, configData *config) {
+	client, err := tftp.NewClient(broadcastAddress)
 	check(err)
 
-	wt, err := c.Receive("config", "octet")
+	writeTo, err := client.Receive("config", "octet")
 	check(err)
 
 	file, err := os.Create("config")
 	check(err)
 
-	n, err := wt.WriteTo(file)
+	bytesReceived, err := writeTo.WriteTo(file)
 	check(err)
 
 	fileString, err := os.ReadFile("config")
@@ -95,12 +104,16 @@ func getFile(broadcastAddress string, configData *config) {
 		}
 	}
 
-	fmt.Printf("File Recieved. %d bytes received\n", n)
+	fmt.Printf("File Recieved. %d bytes received\n", bytesReceived)
 }
 
+/**
+Creates a config file in the application directory
+*/
 func createConfig(configData *config) {
 	configString := ""
 
+	// Convert config struct to commands for config file
 	configSlice := []string{
 		"ip.src=" + configData.srcIP.Text,
 		"ip.dst=" + configData.dstIP.Text,
@@ -112,8 +125,10 @@ func createConfig(configData *config) {
 		"udp.tcp=" + configData.tcpUDP.Text,
 	}
 
+	// Iterate over config slice
 	for configIndex, configLine := range configSlice {
-		fmt.Println(configIndex)
+
+		// Adds the line to config, if it is not blank and is a valid IP or port
 		if configLine[len(configLine)-1] != '=' && validateEntry(configIndex, configData) {
 			configString += configLine + "\n"
 		}
@@ -125,8 +140,12 @@ func createConfig(configData *config) {
 	fmt.Println(configString)
 }
 
+/**
+Validates if a string is an IP Address
+*/
 func ipAddrValidator(ip string) error {
 	re := regexp.MustCompile(`^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$`)
+
 	if re.Match([]byte(ip)) || ip == "" {
 		return nil
 	}
@@ -135,8 +154,12 @@ func ipAddrValidator(ip string) error {
 
 }
 
+/**
+Validates if a string is a port
+*/
 func portValidator(port string) error {
 	re := regexp.MustCompile(`^[0-9]{1,5}$`)
+
 	if re.Match([]byte(port)) || port == "" {
 		return nil
 	}
@@ -144,10 +167,14 @@ func portValidator(port string) error {
 	return errors.New("invalid port")
 }
 
+/**
+Factory method for creating a text field
+*/
 func makeEntryField(text string, validationType string) *widget.Entry {
 	newField := widget.NewEntry()
 	newField.SetPlaceHolder(text)
 
+	// Set validator function
 	if validationType == "ip" {
 		newField.Validator = ipAddrValidator
 	} else {
@@ -157,9 +184,16 @@ func makeEntryField(text string, validationType string) *widget.Entry {
 	return newField
 }
 
+/**
+Ensures text input will be valid before writing it to a file
+*/
 func validateEntry(configIndex int, configData *config) bool {
 	err := errors.New("validateEntry never reaches switch case")
 	validated := false
+
+	/**
+	Cases represent the "index" of the configDa struct
+	*/
 
 	switch configIndex {
 
@@ -201,53 +235,51 @@ func validateEntry(configIndex int, configData *config) bool {
 	return validated
 }
 
+// Main method
 func main() {
 
+	// Initialize GUI
 	gui := app.New()
 
 	window := gui.NewWindow("RIT Launch Initiative TFTP Client")
 	window.Resize(fyne.NewSize(1920, 1080))
 
+	// Text field representing address to broadcast to
 	broadcastTo := widget.NewEntry()
 	broadcastTo.SetText("localhost:69")
 
-	srcIP := makeEntryField("Source IP", "ip")
-	dstIP := makeEntryField("Destination IP", "ip")
-	gwIP := makeEntryField("Gateway IP", "ip")
-	subnetIP := makeEntryField("Subnet IP", "ip")
-	srcUDP := makeEntryField("Source UDP Port", "port")
-	adc0UDP := makeEntryField("ADC0 UDP Port", "port")
-	adc1UDP := makeEntryField("ADC1 UDP Port", "port")
-	tcpUDP := makeEntryField("TCP Port", "port")
-
+	// Entries for config file
 	configData := config{
-		srcIP:    srcIP,
-		dstIP:    dstIP,
-		gwIP:     gwIP,
-		subnetIP: subnetIP,
-		srcUDP:   srcUDP,
-		adc0UDP:  adc0UDP,
-		adc1UDP:  adc1UDP,
-		tcpUDP:   tcpUDP,
+		srcIP:    makeEntryField("Source IP", "ip"),
+		dstIP:    makeEntryField("Destination IP", "ip"),
+		gwIP:     makeEntryField("Gateway IP", "ip"),
+		subnetIP: makeEntryField("Subnet IP", "ip"),
+		srcUDP:   makeEntryField("Source UDP Port", "port"),
+		adc0UDP:  makeEntryField("ADC0 UDP Port", "port"),
+		adc1UDP:  makeEntryField("ADC1 UDP Port", "port"),
+		tcpUDP:   makeEntryField("TCP Port", "port"),
 	}
+
+	// Set and Display Content
 
 	window.SetContent(
 		container.NewVBox(
 			broadcastTo,
-			srcIP,
-			dstIP,
-			gwIP,
-			subnetIP,
-			srcUDP,
-			adc0UDP,
-			adc1UDP,
-			tcpUDP,
+			configData.srcIP,
+			configData.dstIP,
+			configData.gwIP,
+			configData.subnetIP,
+			configData.srcUDP,
+			configData.adc0UDP,
+			configData.adc1UDP,
+			configData.tcpUDP,
+
 			widget.NewButton("Create Config", func() {
 				createConfig(&configData)
 			}),
 
-			widget.NewButton("Get File", func() {
-				getFile(broadcastTo.Text, &configData)
+			widget.NewButton("Receive File", func() {
+				receiveFile(broadcastTo.Text, &configData)
 			}),
 
 			widget.NewButton("Upload File", func() {
