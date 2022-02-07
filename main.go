@@ -14,14 +14,11 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"gitlab.com/rackn/tftp/v3"
-	"net/http"
 	"os"
 	"regexp"
 	"strings"
 	"time"
 )
-
-var client *http.Client
 
 // Struct representing config file entries
 type config struct {
@@ -49,8 +46,10 @@ func check(e error) {
 Uploads files to given broadcast address
 */
 func uploadFile(broadcastAddress string) {
-	client, err := tftp.NewClient(broadcastAddress)
-	check(err)
+	client, err := tftp.NewClient(broadcastAddress + ":69")
+	if err != nil {
+		return
+	}
 
 	file, err := os.Open("config")
 	check(err)
@@ -69,8 +68,10 @@ func uploadFile(broadcastAddress string) {
 Receives a file from the given broadcast address and inputs it into the text boxes
 */
 func receiveFile(broadcastAddress string, configData *config) {
-	client, err := tftp.NewClient(broadcastAddress)
-	check(err)
+	client, err := tftp.NewClient(broadcastAddress + ":69")
+	if err != nil {
+		return
+	}
 
 	writeTo, err := client.Receive("config", "octet")
 	check(err)
@@ -146,7 +147,7 @@ Validates if a string is an IP Address
 func ipAddrValidator(ip string) error {
 	re := regexp.MustCompile(`^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$`)
 
-	if re.Match([]byte(ip)) || ip == "" {
+	if re.Match([]byte(ip)) || ip == "" || ip == "localhost" {
 		return nil
 	}
 
@@ -246,7 +247,8 @@ func main() {
 
 	// Text field representing address to broadcast to
 	broadcastTo := widget.NewEntry()
-	broadcastTo.SetText("localhost:69")
+	broadcastTo.SetText("localhost")
+	broadcastTo.Validator = ipAddrValidator
 
 	// Entries for config file
 	configData := config{

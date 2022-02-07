@@ -1,4 +1,4 @@
-module tftp.com/client
+module github.com/AarC10/DAQ-Client 
 
 go 1.17
 
