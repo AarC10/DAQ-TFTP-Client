@@ -11,9 +11,11 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"gitlab.com/rackn/tftp/v3"
+	"image/color"
 	"os"
 	"regexp"
 	"strings"
@@ -186,6 +188,16 @@ func makeEntryField(text string, validationType string) *widget.Entry {
 }
 
 /**
+Factory method for creating texts
+*/
+func makeNewText(text string) *canvas.Text {
+	newText := canvas.NewText(text, color.White)
+	newText.Alignment = fyne.TextAlignCenter
+
+	return newText
+}
+
+/**
 Ensures text input will be valid before writing it to a file
 */
 func validateEntry(configIndex int, configData *config) bool {
@@ -262,8 +274,14 @@ func main() {
 		tcpUDP:   makeEntryField("TCP Port", "port"),
 	}
 
-	// Set and Display Content
+	// Instructions message
+	instructionsOne := makeNewText("The first entry should be a valid IP address, otherwise the program will not attempt to send/receive files")
+	instructionsTwo := makeNewText("All other entries, if invalid will be marked red and will not be written to the config file")
+	instructionsThree := makeNewText("The write file button will write all valid entries as commands into a config file")
+	instructionsFour := makeNewText("The upload button will send the config file that is currently in the application directory to the DAQ")
+	instructionsFive := makeNewText("The receive button will overwrite the config file in the application directory and input its fields into the application")
 
+	// Set and Display Content
 	window.SetContent(
 		container.NewVBox(
 			broadcastTo,
@@ -287,6 +305,12 @@ func main() {
 			widget.NewButton("Upload File", func() {
 				uploadFile(broadcastTo.Text)
 			}),
+
+			instructionsOne,
+			instructionsTwo,
+			instructionsThree,
+			instructionsFour,
+			instructionsFive,
 		),
 	)
 
