@@ -35,6 +35,15 @@ type config struct {
 	tcpUDP  *widget.Entry
 }
 
+// Struct representing user settings and extra widgets.
+type extras struct { // TODO: Brainstorm a better struct name
+	broadcastAddr *widget.Entry
+	broadcastPort *widget.Entry
+	receivingFile *widget.Entry
+	guiResponses  *widget.Entry
+	loadingBar    *widget.ProgressBar
+}
+
 /**
 Error Handling
 */
@@ -47,8 +56,8 @@ func check(e error) {
 /**
 Uploads files to given broadcast address
 */
-func uploadFile(broadcastAddress string) {
-	client, err := tftp.NewClient(broadcastAddress + ":69")
+func uploadFile(settings *extras) {
+	client, err := tftp.NewClient(settings.broadcastAddr.Text + settings.broadcastPort.Text)
 	if err != nil {
 		return
 	}
@@ -69,45 +78,51 @@ func uploadFile(broadcastAddress string) {
 /**
 Receives a file from the given broadcast address and inputs it into the text boxes
 */
-func receiveFile(broadcastAddress string, configData *config) {
-	client, err := tftp.NewClient(broadcastAddress + ":69")
+func receiveFile(settings *extras, configData *config) {
+	client, err := tftp.NewClient(settings.broadcastAddr.Text + ":69")
 	if err != nil {
 		return
 	}
 
-	writeTo, err := client.Receive("config", "octet")
+	writeTo, err := client.Receive(settings.receivingFile.Text, "octet")
 	check(err)
 
-	file, err := os.Create("config")
+	file, err := os.Create(settings.receivingFile.Text)
 	check(err)
 
 	bytesReceived, err := writeTo.WriteTo(file)
 	check(err)
 
-	fileString, err := os.ReadFile("config")
+	fileString, err := os.ReadFile(settings.receivingFile.Text)
 	check(err)
 
-	for _, line := range strings.Split(string(fileString), "\n") {
-		if strings.Contains(line, "ip.src") {
-			configData.srcIP.SetText(line[7:])
-		} else if strings.Contains(line, "ip.dst") {
-			configData.dstIP.SetText(line[7:])
-		} else if strings.Contains(line, "ip.gw") {
-			configData.gwIP.SetText(line[6:])
-		} else if strings.Contains(line, "ip.subnet") {
-			configData.subnetIP.SetText(line[10:])
-		} else if strings.Contains(line, "udp.src") {
-			configData.srcUDP.SetText(line[8:])
-		} else if strings.Contains(line, "udp.adc0") {
-			configData.adc0UDP.SetText(line[9:])
-		} else if strings.Contains(line, "udp.adc1") {
-			configData.adc1UDP.SetText(line[9:])
-		} else if strings.Contains(line, "udp.tcp") {
-			configData.tcpUDP.SetText(line[8:])
+	if settings.receivingFile.Text == "config" {
+		for _, line := range strings.Split(string(fileString), "\n") {
+			if strings.Contains(line, "ip.src") {
+				configData.srcIP.SetText(line[7:])
+			} else if strings.Contains(line, "ip.dst") {
+				configData.dstIP.SetText(line[7:])
+			} else if strings.Contains(line, "ip.gw") {
+				configData.gwIP.SetText(line[6:])
+			} else if strings.Contains(line, "ip.subnet") {
+				configData.subnetIP.SetText(line[10:])
+			} else if strings.Contains(line, "udp.src") {
+				configData.srcUDP.SetText(line[8:])
+			} else if strings.Contains(line, "udp.adc0") {
+				configData.adc0UDP.SetText(line[9:])
+			} else if strings.Contains(line, "udp.adc1") {
+				configData.adc1UDP.SetText(line[9:])
+			} else if strings.Contains(line, "udp.tcp") {
+				configData.tcpUDP.SetText(line[8:])
+			}
 		}
+
+		fmt.Printf("File Recieved. %d bytes received\n", bytesReceived)
+
+	} else {
+
 	}
 
-	fmt.Printf("File Recieved. %d bytes received\n", bytesReceived)
 }
 
 /**
@@ -257,10 +272,17 @@ func main() {
 	window := gui.NewWindow("RIT Launch Initiative TFTP Client")
 	window.Resize(fyne.NewSize(1920, 1080))
 
-	// Text field representing address to broadcast to
-	broadcastTo := widget.NewEntry()
-	broadcastTo.SetText("localhost")
-	broadcastTo.Validator = ipAddrValidator
+	extras := extras{
+		makeEntryField("Broadcast IP", "ip"),
+		makeEntryField("Broadcast Port", "port"),
+		widget.NewEntry(),
+		widget.NewEntry(),
+		widget.NewProgressBar(),
+	}
+
+	extras.receivingFile.SetPlaceHolder("File Name")
+
+	configSep := canvas.NewLine(color.White)
 
 	// Entries for config file
 	configData := config{
@@ -284,7 +306,12 @@ func main() {
 	// Set and Display Content
 	window.SetContent(
 		container.NewVBox(
-			broadcastTo,
+			extras.broadcastAddr,
+			extras.broadcastPort,
+			extras.receivingFile,
+
+			configSep,
+
 			configData.srcIP,
 			configData.dstIP,
 			configData.gwIP,
@@ -299,11 +326,11 @@ func main() {
 			}),
 
 			widget.NewButton("Receive File", func() {
-				receiveFile(broadcastTo.Text, &configData)
+				receiveFile(&extras, &configData)
 			}),
 
 			widget.NewButton("Upload File", func() {
-				uploadFile(broadcastTo.Text)
+				uploadFile(&extras)
 			}),
 
 			instructionsOne,
