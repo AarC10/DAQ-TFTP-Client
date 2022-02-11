@@ -16,6 +16,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"gitlab.com/rackn/tftp/v3"
 	"image/color"
+	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -33,16 +34,19 @@ type config struct {
 	adc0UDP *widget.Entry
 	adc1UDP *widget.Entry
 	tcpUDP  *widget.Entry
+
+	adc0Rate *widget.Select
+	adc1Rate *widget.Select
 }
 
 // Struct representing user settings and extra widgets.
 type extras struct { // TODO: Brainstorm a better struct name
 	broadcastAddr *widget.Entry
-	broadcastPort *widget.Entry
-	receivingFile *widget.Entry
 	guiResponses  *widget.Entry
 	loadingBar    *widget.ProgressBar
 }
+
+var TFTP_BROADCAST_PORT = ":69"
 
 /**
 Error Handling
@@ -57,20 +61,34 @@ func check(e error) {
 Uploads files to given broadcast address
 */
 func uploadFile(settings *extras) {
-	client, err := tftp.NewClient(settings.broadcastAddr.Text + settings.broadcastPort.Text)
+	settings.loadingBar.SetValue(0)
+
+	if settings.broadcastAddr.Text == "" {
+		return
+	}
+
+	client, err := tftp.NewClient(settings.broadcastAddr.Text + TFTP_BROADCAST_PORT)
 	if err != nil {
 		return
 	}
 
+	settings.loadingBar.SetValue(25)
+
 	file, err := os.Open("config")
 	check(err)
+
+	settings.loadingBar.SetValue(50)
 
 	client.SetTimeout(5 * time.Second)
 	readFrom, err := client.Send("config", "octet")
 	check(err)
 
+	settings.loadingBar.SetValue(75)
+
 	bytesSent, err := readFrom.ReadFrom(file)
 	check(err)
+
+	settings.loadingBar.SetValue(100)
 
 	fmt.Printf("%d bytes sent\n", bytesSent)
 }
@@ -79,49 +97,61 @@ func uploadFile(settings *extras) {
 Receives a file from the given broadcast address and inputs it into the text boxes
 */
 func receiveFile(settings *extras, configData *config) {
-	client, err := tftp.NewClient(settings.broadcastAddr.Text + ":69")
+	settings.loadingBar.SetValue(0)
+
+	if settings.broadcastAddr.Text == "" {
+		return
+	}
+
+	client, err := tftp.NewClient(settings.broadcastAddr.Text + TFTP_BROADCAST_PORT)
 	if err != nil {
 		return
 	}
 
-	writeTo, err := client.Receive(settings.receivingFile.Text, "octet")
+	settings.loadingBar.SetValue(20)
+
+	writeTo, err := client.Receive("config", "octet")
 	check(err)
 
-	file, err := os.Create(settings.receivingFile.Text)
+	settings.loadingBar.SetValue(40)
+
+	file, err := os.Create("config")
 	check(err)
+
+	settings.loadingBar.SetValue(60)
 
 	bytesReceived, err := writeTo.WriteTo(file)
 	check(err)
 
-	fileString, err := os.ReadFile(settings.receivingFile.Text)
+	settings.loadingBar.SetValue(80)
+
+	fileString, err := os.ReadFile("config")
 	check(err)
 
-	if settings.receivingFile.Text == "config" {
-		for _, line := range strings.Split(string(fileString), "\n") {
-			if strings.Contains(line, "ip.src") {
-				configData.srcIP.SetText(line[7:])
-			} else if strings.Contains(line, "ip.dst") {
-				configData.dstIP.SetText(line[7:])
-			} else if strings.Contains(line, "ip.gw") {
-				configData.gwIP.SetText(line[6:])
-			} else if strings.Contains(line, "ip.subnet") {
-				configData.subnetIP.SetText(line[10:])
-			} else if strings.Contains(line, "udp.src") {
-				configData.srcUDP.SetText(line[8:])
-			} else if strings.Contains(line, "udp.adc0") {
-				configData.adc0UDP.SetText(line[9:])
-			} else if strings.Contains(line, "udp.adc1") {
-				configData.adc1UDP.SetText(line[9:])
-			} else if strings.Contains(line, "udp.tcp") {
-				configData.tcpUDP.SetText(line[8:])
-			}
+	for _, line := range strings.Split(string(fileString), "\n") {
+		if strings.Contains(line, "ip.src") {
+			configData.srcIP.SetText(line[7:])
+		} else if strings.Contains(line, "ip.dst") {
+			configData.dstIP.SetText(line[7:])
+		} else if strings.Contains(line, "ip.gw") {
+			configData.gwIP.SetText(line[6:])
+		} else if strings.Contains(line, "ip.subnet") {
+			configData.subnetIP.SetText(line[10:])
+		} else if strings.Contains(line, "udp.src") {
+			configData.srcUDP.SetText(line[8:])
+		} else if strings.Contains(line, "ud.p.adc0") {
+			configData.adc0UDP.SetText(line[9:])
+		} else if strings.Contains(line, "udp.adc1") {
+			configData.adc1UDP.SetText(line[9:])
+		} else if strings.Contains(line, "udp.tcp") {
+			configData.tcpUDP.SetText(line[8:])
 		}
 
 		fmt.Printf("File Recieved. %d bytes received\n", bytesReceived)
 
-	} else {
-
 	}
+
+	settings.loadingBar.SetValue(100)
 
 }
 
@@ -141,6 +171,8 @@ func createConfig(configData *config) {
 		"udp.adc0=" + configData.adc0UDP.Text,
 		"udp.adc1=" + configData.adc1UDP.Text,
 		"udp.tcp=" + configData.tcpUDP.Text,
+		"rate.adc0=" + configData.adc0Rate.Selected,
+		"rate.adc1=" + configData.adc1Rate.Selected,
 	}
 
 	// Iterate over config slice
@@ -213,6 +245,17 @@ func makeNewText(text string) *canvas.Text {
 }
 
 /**
+Factory method for creating selection box
+*/
+func makeNewSelection(text string, options []string) *widget.Select {
+	newSelection := widget.NewSelect(options, func(value string) {
+		log.Println(text, "set to", value)
+	})
+
+	return newSelection
+}
+
+/**
 Ensures text input will be valid before writing it to a file
 */
 func validateEntry(configIndex int, configData *config) bool {
@@ -273,14 +316,10 @@ func main() {
 	window.Resize(fyne.NewSize(1920, 1080))
 
 	extras := extras{
-		makeEntryField("Broadcast IP", "ip"),
-		makeEntryField("Broadcast Port", "port"),
-		widget.NewEntry(),
+		makeEntryField("Current DAQ IP", "ip"),
 		widget.NewEntry(),
 		widget.NewProgressBar(),
 	}
-
-	extras.receivingFile.SetPlaceHolder("File Name")
 
 	configSep := canvas.NewLine(color.White)
 
@@ -290,10 +329,14 @@ func main() {
 		dstIP:    makeEntryField("Destination IP", "ip"),
 		gwIP:     makeEntryField("Gateway IP", "ip"),
 		subnetIP: makeEntryField("Subnet IP", "ip"),
-		srcUDP:   makeEntryField("Source UDP Port", "port"),
-		adc0UDP:  makeEntryField("ADC0 UDP Port", "port"),
-		adc1UDP:  makeEntryField("ADC1 UDP Port", "port"),
-		tcpUDP:   makeEntryField("TCP Port", "port"),
+
+		srcUDP:  makeEntryField("Source UDP Port", "port"),
+		adc0UDP: makeEntryField("ADC0 UDP Port", "port"),
+		adc1UDP: makeEntryField("ADC1 UDP Port", "port"),
+		tcpUDP:  makeEntryField("TCP Port", "port"),
+
+		adc0Rate: makeNewSelection("ADC0 Rate", []string{"slow", "fast"}),
+		adc1Rate: makeNewSelection("ADC1 Rate", []string{"slow", "fast"}),
 	}
 
 	// Instructions message
@@ -307,8 +350,6 @@ func main() {
 	window.SetContent(
 		container.NewVBox(
 			extras.broadcastAddr,
-			extras.broadcastPort,
-			extras.receivingFile,
 
 			configSep,
 
@@ -320,6 +361,13 @@ func main() {
 			configData.adc0UDP,
 			configData.adc1UDP,
 			configData.tcpUDP,
+			container.NewHBox(
+				widget.NewLabel("ADC0 Rate: "),
+				configData.adc0Rate,
+
+				widget.NewLabel("ADC1 Rate: "),
+				configData.adc1Rate,
+			),
 
 			widget.NewButton("Create Config", func() {
 				createConfig(&configData)
@@ -338,6 +386,7 @@ func main() {
 			instructionsThree,
 			instructionsFour,
 			instructionsFive,
+			extras.loadingBar,
 		),
 	)
 
