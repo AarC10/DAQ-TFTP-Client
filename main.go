@@ -17,6 +17,7 @@ import (
 	"gitlab.com/rackn/tftp/v3"
 	"image/color"
 	"log"
+	"net"
 	"os"
 	"regexp"
 	"strings"
@@ -66,6 +67,14 @@ Test ping an IP before receiving/uploading
 */
 func pingCheck(broadcastAddr *widget.Entry, messageLabel **widget.Label) bool {
 	pingSuccess := true
+
+	_, err := net.Dial("udp", broadcastAddr.Text)
+
+	if err != nil {
+		log.Println("Can't connect")
+		(*messageLabel).SetText("Can't connect to DAQ IP Address")
+		pingSuccess = false
+	}
 
 	return pingSuccess
 }
