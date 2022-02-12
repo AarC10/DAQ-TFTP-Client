@@ -68,7 +68,7 @@ Test ping an IP before receiving/uploading
 func pingCheck(broadcastAddr *widget.Entry, messageLabel **widget.Label) bool {
 	pingSuccess := true
 
-	_, err := net.Dial("udp", broadcastAddr.Text)
+	_, err := net.Dial("udp", broadcastAddr.Text+TFTP_PORT)
 
 	if err != nil {
 		log.Println("Can't connect")
@@ -119,6 +119,7 @@ func uploadFile(extras *extras) {
 	extras.loadingBar.SetValue(100)
 
 	fmt.Printf("%d bytes sent\n", bytesSent)
+	extras.inputResponse.SetText("File successfully uploaded.")
 
 }
 
@@ -185,7 +186,7 @@ func receiveFile(extras *extras, configData *config) {
 	}
 
 	extras.loadingBar.SetValue(100)
-
+	extras.inputResponse.SetText("File successfully received.")
 }
 
 /**
@@ -225,6 +226,7 @@ func createConfig(configData *config, extras *extras) {
 	check(err, &extras.inputResponse)
 
 	fmt.Println(configString)
+	extras.inputResponse.SetText("Config successfully created.")
 }
 
 /**
