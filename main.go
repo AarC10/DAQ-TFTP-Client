@@ -46,6 +46,7 @@ type extras struct { // TODO: Brainstorm a better struct name
 	broadcastAddr *widget.Entry
 	guiResponses  *widget.Entry
 	loadingBar    *widget.ProgressBar
+	errorMessage  *widget.Label
 }
 
 var TFTP_BROADCAST_PORT = ":69"
@@ -53,44 +54,45 @@ var TFTP_BROADCAST_PORT = ":69"
 /**
 Error Handling
 */
-func check(e error) {
+func check(e error, messageLabel **widget.Label) {
 	if e != nil {
-		panic(e)
+		(*messageLabel).SetText(e.Error())
+		log.Println(e)
 	}
 }
 
 /**
 Uploads files to given broadcast address
 */
-func uploadFile(settings *extras) {
-	settings.loadingBar.SetValue(0)
+func uploadFile(extras *extras) {
+	extras.loadingBar.SetValue(0)
 
-	if settings.broadcastAddr.Text == "" {
+	if extras.broadcastAddr.Text == "" {
 		return
 	}
 
-	client, err := tftp.NewClient(settings.broadcastAddr.Text + TFTP_BROADCAST_PORT)
+	client, err := tftp.NewClient(extras.broadcastAddr.Text + TFTP_BROADCAST_PORT)
 	if err != nil {
 		return
 	}
 
-	settings.loadingBar.SetValue(25)
+	extras.loadingBar.SetValue(25)
 
 	file, err := os.Open("config")
-	check(err)
+	check(err, &extras.errorMessage)
 
-	settings.loadingBar.SetValue(50)
+	extras.loadingBar.SetValue(50)
 
 	client.SetTimeout(5 * time.Second)
 	readFrom, err := client.Send("config", "octet")
-	check(err)
+	check(err, &extras.errorMessage)
 
-	settings.loadingBar.SetValue(75)
+	extras.loadingBar.SetValue(75)
 
 	bytesSent, err := readFrom.ReadFrom(file)
-	check(err)
+	check(err, &extras.errorMessage)
 
-	settings.loadingBar.SetValue(100)
+	extras.loadingBar.SetValue(100)
 
 	fmt.Printf("%d bytes sent\n", bytesSent)
 }
@@ -98,37 +100,37 @@ func uploadFile(settings *extras) {
 /**
 Receives a file from the given broadcast address and inputs it into the text boxes
 */
-func receiveFile(settings *extras, configData *config) {
-	settings.loadingBar.SetValue(0)
+func receiveFile(extras *extras, configData *config) {
+	extras.loadingBar.SetValue(0)
 
-	if settings.broadcastAddr.Text == "" {
+	if extras.broadcastAddr.Text == "" {
 		return
 	}
 
-	client, err := tftp.NewClient(settings.broadcastAddr.Text + TFTP_BROADCAST_PORT)
+	client, err := tftp.NewClient(extras.broadcastAddr.Text + TFTP_BROADCAST_PORT)
 	if err != nil {
 		return
 	}
 
-	settings.loadingBar.SetValue(20)
+	extras.loadingBar.SetValue(20)
 
 	writeTo, err := client.Receive("config", "octet")
-	check(err)
+	check(err, &extras.errorMessage)
 
-	settings.loadingBar.SetValue(40)
+	extras.loadingBar.SetValue(40)
 
 	file, err := os.Create("config")
-	check(err)
+	check(err, &extras.errorMessage)
 
-	settings.loadingBar.SetValue(60)
+	extras.loadingBar.SetValue(60)
 
 	bytesReceived, err := writeTo.WriteTo(file)
-	check(err)
+	check(err, &extras.errorMessage)
 
-	settings.loadingBar.SetValue(80)
+	extras.loadingBar.SetValue(80)
 
 	fileString, err := os.ReadFile("config")
-	check(err)
+	check(err, &extras.errorMessage)
 
 	for _, line := range strings.Split(string(fileString), "\n") {
 		if strings.Contains(line, "ip.src") {
@@ -153,14 +155,14 @@ func receiveFile(settings *extras, configData *config) {
 
 	}
 
-	settings.loadingBar.SetValue(100)
+	extras.loadingBar.SetValue(100)
 
 }
 
 /**
 Creates a config file in the application directory
 */
-func createConfig(configData *config) {
+func createConfig(configData *config, extras *extras) {
 	configString := ""
 
 	// Convert config struct to commands for config file
@@ -191,7 +193,7 @@ func createConfig(configData *config) {
 	}
 
 	err := os.WriteFile("config", []byte(configString), 0666)
-	check(err)
+	check(err, &extras.errorMessage)
 
 	fmt.Println(configString)
 }
@@ -342,9 +344,8 @@ func main() {
 		makeEntryField("Current DAQ IP", "ip"),
 		widget.NewEntry(),
 		widget.NewProgressBar(),
+		widget.NewLabel(""),
 	}
-
-	configSep := canvas.NewLine(color.White)
 
 	// Entries for config file
 	configData := config{
@@ -376,7 +377,7 @@ func main() {
 		container.NewVBox(
 			extras.broadcastAddr,
 
-			configSep,
+			canvas.NewLine(color.White),
 
 			configData.srcIP,
 			configData.dstIP,
@@ -386,6 +387,7 @@ func main() {
 			configData.adc0UDP,
 			configData.adc1UDP,
 			configData.tcpUDP,
+
 			container.NewHBox(
 				widget.NewLabel("ADC0 Rate: "),
 				configData.adc0Rate,
@@ -396,8 +398,10 @@ func main() {
 				configData.resetCheck,
 			),
 
+			canvas.NewLine(color.White),
+
 			widget.NewButton("Create Config", func() {
-				createConfig(&configData)
+				createConfig(&configData, &extras)
 			}),
 
 			widget.NewButton("Receive File", func() {
@@ -408,12 +412,16 @@ func main() {
 				uploadFile(&extras)
 			}),
 
+			canvas.NewLine(color.White),
+
 			instructionsOne,
 			instructionsTwo,
 			instructionsThree,
 			instructionsFour,
 			instructionsFive,
 			// extras.loadingBar,
+			canvas.NewLine(color.White),
+			extras.errorMessage,
 		),
 	)
 
