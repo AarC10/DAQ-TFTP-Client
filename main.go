@@ -225,8 +225,21 @@ func ipAddrValidator(ip string) error {
 		return nil
 	}
 
-	return errors.New("invalid IP Address")
+	return errors.New("error: Invalid IP Address")
 
+}
+
+/**
+Validates DAQ IP Address
+*/
+func daqIPAddrValidator(ip string) error {
+	re := regexp.MustCompile(`^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$`)
+
+	if re.Match([]byte(ip)) || ip == "localhost" {
+		return nil
+	}
+
+	return errors.New("error: DAQ IP Address must be filled in")
 }
 
 /**
@@ -239,7 +252,7 @@ func portValidator(port string) error {
 		return nil
 	}
 
-	return errors.New("invalid port")
+	return errors.New("error: Invalid port")
 }
 
 /**
@@ -364,6 +377,8 @@ func main() {
 		widget.NewLabel(""),
 	}
 
+	extras.broadcastAddr.Validator = daqIPAddrValidator
+
 	// Entries for config file
 	configData := config{
 		srcIP:    makeEntryField("Source IP", "ip"),
@@ -436,7 +451,7 @@ func main() {
 			instructionsThree,
 			instructionsFour,
 			instructionsFive,
-			// extras.loadingBar,
+			extras.loadingBar,
 			canvas.NewLine(color.White),
 			extras.errorMessage,
 		),
