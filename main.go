@@ -49,7 +49,7 @@ type extras struct { // TODO: Brainstorm a better struct name
 	errorMessage  *widget.Label
 }
 
-var TFTP_BROADCAST_PORT = ":69"
+var TFTP_PORT = ":69"
 
 /**
 Error Handling
@@ -62,6 +62,15 @@ func check(e error, messageLabel **widget.Label) {
 }
 
 /**
+Test ping an IP before receiving/uploading
+*/
+func pingCheck(broadcastAddr *widget.Entry, messageLabel **widget.Label) bool {
+	pingSuccess := true
+
+	return pingSuccess
+}
+
+/**
 Uploads files to given broadcast address
 */
 func uploadFile(extras *extras) {
@@ -71,7 +80,11 @@ func uploadFile(extras *extras) {
 		return
 	}
 
-	client, err := tftp.NewClient(extras.broadcastAddr.Text + TFTP_BROADCAST_PORT)
+	if !pingCheck(extras.broadcastAddr, &extras.errorMessage) {
+		return
+	}
+
+	client, err := tftp.NewClient(extras.broadcastAddr.Text + TFTP_PORT)
 	if err != nil {
 		return
 	}
@@ -103,14 +116,18 @@ Receives a file from the given broadcast address and inputs it into the text box
 func receiveFile(extras *extras, configData *config) {
 	extras.loadingBar.SetValue(0)
 
-	if extras.broadcastAddr.Text == "" {
+	err := extras.broadcastAddr.Validate()
+	if err != nil {
+		check(err, &extras.errorMessage)
 		return
 	}
 
-	client, err := tftp.NewClient(extras.broadcastAddr.Text + TFTP_BROADCAST_PORT)
-	if err != nil {
+	if !pingCheck(extras.broadcastAddr, &extras.errorMessage) {
 		return
 	}
+
+	client, err := tftp.NewClient(extras.broadcastAddr.Text + TFTP_PORT)
+	check(err, &extras.errorMessage)
 
 	extras.loadingBar.SetValue(20)
 
@@ -143,7 +160,7 @@ func receiveFile(extras *extras, configData *config) {
 			configData.subnetIP.SetText(line[10:])
 		} else if strings.Contains(line, "udp.src") {
 			configData.srcUDP.SetText(line[8:])
-		} else if strings.Contains(line, "ud.p.adc0") {
+		} else if strings.Contains(line, "udp.adc0") {
 			configData.adc0UDP.SetText(line[9:])
 		} else if strings.Contains(line, "udp.adc1") {
 			configData.adc1UDP.SetText(line[9:])
