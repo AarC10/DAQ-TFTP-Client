@@ -47,7 +47,7 @@ type extras struct { // TODO: Brainstorm a better struct name
 	broadcastAddr *widget.Entry
 	guiResponses  *widget.Entry
 	loadingBar    *widget.ProgressBar
-	errorMessage  *widget.Label
+	inputResponse *widget.Label
 }
 
 var TFTP_PORT = ":69"
@@ -89,7 +89,7 @@ func uploadFile(extras *extras) {
 		return
 	}
 
-	if !pingCheck(extras.broadcastAddr, &extras.errorMessage) {
+	if !pingCheck(extras.broadcastAddr, &extras.inputResponse) {
 		return
 	}
 
@@ -101,22 +101,23 @@ func uploadFile(extras *extras) {
 	extras.loadingBar.SetValue(25)
 
 	file, err := os.Open("config")
-	check(err, &extras.errorMessage)
+	check(err, &extras.inputResponse)
 
 	extras.loadingBar.SetValue(50)
 
 	client.SetTimeout(5 * time.Second)
 	readFrom, err := client.Send("config", "octet")
-	check(err, &extras.errorMessage)
+	check(err, &extras.inputResponse)
 
 	extras.loadingBar.SetValue(75)
 
 	bytesSent, err := readFrom.ReadFrom(file)
-	check(err, &extras.errorMessage)
+	check(err, &extras.inputResponse)
 
 	extras.loadingBar.SetValue(100)
 
 	fmt.Printf("%d bytes sent\n", bytesSent)
+
 }
 
 /**
@@ -127,36 +128,36 @@ func receiveFile(extras *extras, configData *config) {
 
 	err := extras.broadcastAddr.Validate()
 	if err != nil {
-		check(err, &extras.errorMessage)
+		check(err, &extras.inputResponse)
 		return
 	}
 
-	if !pingCheck(extras.broadcastAddr, &extras.errorMessage) {
+	if !pingCheck(extras.broadcastAddr, &extras.inputResponse) {
 		return
 	}
 
 	client, err := tftp.NewClient(extras.broadcastAddr.Text + TFTP_PORT)
-	check(err, &extras.errorMessage)
+	check(err, &extras.inputResponse)
 
 	extras.loadingBar.SetValue(20)
 
 	writeTo, err := client.Receive("config", "octet")
-	check(err, &extras.errorMessage)
+	check(err, &extras.inputResponse)
 
 	extras.loadingBar.SetValue(40)
 
 	file, err := os.Create("config")
-	check(err, &extras.errorMessage)
+	check(err, &extras.inputResponse)
 
 	extras.loadingBar.SetValue(60)
 
 	bytesReceived, err := writeTo.WriteTo(file)
-	check(err, &extras.errorMessage)
+	check(err, &extras.inputResponse)
 
 	extras.loadingBar.SetValue(80)
 
 	fileString, err := os.ReadFile("config")
-	check(err, &extras.errorMessage)
+	check(err, &extras.inputResponse)
 
 	for _, line := range strings.Split(string(fileString), "\n") {
 		if strings.Contains(line, "ip.src") {
@@ -219,7 +220,7 @@ func createConfig(configData *config, extras *extras) {
 	}
 
 	err := os.WriteFile("config", []byte(configString), 0666)
-	check(err, &extras.errorMessage)
+	check(err, &extras.inputResponse)
 
 	fmt.Println(configString)
 }
@@ -462,7 +463,7 @@ func main() {
 			instructionsFive,
 			extras.loadingBar,
 			canvas.NewLine(color.White),
-			extras.errorMessage,
+			extras.inputResponse,
 		),
 	)
 
