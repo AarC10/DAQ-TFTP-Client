@@ -85,7 +85,9 @@ Uploads files to given broadcast address
 func uploadFile(extras *extras) {
 	extras.loadingBar.SetValue(0)
 
-	if extras.broadcastAddr.Text == "" {
+	err := extras.broadcastAddr.Validate()
+	if err != nil {
+		check(err, &extras.inputResponse)
 		return
 	}
 
@@ -236,7 +238,6 @@ func ipAddrValidator(ip string) error {
 	}
 
 	return errors.New("error: Invalid IP Address")
-
 }
 
 /**
@@ -461,7 +462,7 @@ func main() {
 			instructionsThree,
 			instructionsFour,
 			instructionsFive,
-			extras.loadingBar,
+			// extras.loadingBar,
 			canvas.NewLine(color.White),
 			extras.inputResponse,
 		),
