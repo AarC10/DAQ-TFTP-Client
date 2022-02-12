@@ -181,9 +181,8 @@ func receiveFile(extras *extras, configData *config) {
 			configData.tcpUDP.SetText(line[8:])
 		}
 
-		fmt.Printf("File Recieved. %d bytes received\n", bytesReceived)
-
 	}
+	fmt.Printf("File Recieved. %d bytes received\n", bytesReceived)
 
 	extras.loadingBar.SetValue(100)
 	extras.inputResponse.SetText("File successfully received.")
