@@ -173,8 +173,8 @@ func createConfig(configData *config) {
 		"udp.adc0=" + configData.adc0UDP.Text,
 		"udp.adc1=" + configData.adc1UDP.Text,
 		"udp.tcp=" + configData.tcpUDP.Text,
-		"rate.adc0=" + configData.adc0Rate.Selected[0:4],
-		"rate.adc1=" + configData.adc1Rate.Selected[0:4],
+		"rate.adc0=" + adcRateSelected(configData.adc0Rate),
+		"rate.adc1=" + adcRateSelected(configData.adc1Rate),
 	}
 
 	// Iterate over config slice
@@ -221,6 +221,23 @@ func portValidator(port string) error {
 	}
 
 	return errors.New("invalid port")
+}
+
+/**
+Checks if selection box has a selection and return a string representation
+*/
+func adcRateSelected(adcRate *widget.Select) string {
+	out := ""
+
+	switch adcRate.Selected {
+	case "Slow (8 kHz)":
+		out = "slow"
+
+	case "Fast (43 kHz)":
+		out = "fast"
+	}
+
+	return out
 }
 
 /**
@@ -341,8 +358,8 @@ func main() {
 		adc1UDP: makeEntryField("ADC1 UDP Port", "port"),
 		tcpUDP:  makeEntryField("TCP Port", "port"),
 
-		adc0Rate: makeNewSelection("ADC0 Rate", []string{"slow (8 kHz)", "fast (43 kHz)"}),
-		adc1Rate: makeNewSelection("ADC1 Rate", []string{"slow (8 kHz)", "fast (43 kHz)"}),
+		adc0Rate: makeNewSelection("ADC0 Rate", []string{"Slow (8 kHz)", "Fast (43 kHz)"}),
+		adc1Rate: makeNewSelection("ADC1 Rate", []string{"Slow (8 kHz)", "Fast (43 kHz)"}),
 
 		resetCheck: widget.NewCheck("Reset", func(b bool) {}),
 	}
