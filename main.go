@@ -37,6 +37,8 @@ type config struct {
 
 	adc0Rate *widget.Select
 	adc1Rate *widget.Select
+
+	resetCheck *widget.Check
 }
 
 // Struct representing user settings and extra widgets.
@@ -171,17 +173,21 @@ func createConfig(configData *config) {
 		"udp.adc0=" + configData.adc0UDP.Text,
 		"udp.adc1=" + configData.adc1UDP.Text,
 		"udp.tcp=" + configData.tcpUDP.Text,
-		"rate.adc0=" + configData.adc0Rate.Selected,
-		"rate.adc1=" + configData.adc1Rate.Selected,
+		"rate.adc0=" + configData.adc0Rate.Selected[0:4],
+		"rate.adc1=" + configData.adc1Rate.Selected[0:4],
 	}
 
 	// Iterate over config slice
 	for configIndex, configLine := range configSlice {
 
 		// Adds the line to config, if it is not blank and is a valid IP or port
-		if configLine[len(configLine)-1] != '=' && validateEntry(configIndex, configData) {
+		if configLine[len(configLine)-1] != '=' && (validateEntry(configIndex, configData)) {
 			configString += configLine + "\n"
 		}
+	}
+
+	if configData.resetCheck.Checked {
+		configString += "reset\n"
 	}
 
 	err := os.WriteFile("config", []byte(configString), 0666)
@@ -335,8 +341,10 @@ func main() {
 		adc1UDP: makeEntryField("ADC1 UDP Port", "port"),
 		tcpUDP:  makeEntryField("TCP Port", "port"),
 
-		adc0Rate: makeNewSelection("ADC0 Rate", []string{"slow", "fast"}),
-		adc1Rate: makeNewSelection("ADC1 Rate", []string{"slow", "fast"}),
+		adc0Rate: makeNewSelection("ADC0 Rate", []string{"slow (8 kHz)", "fast (43 kHz)"}),
+		adc1Rate: makeNewSelection("ADC1 Rate", []string{"slow (8 kHz)", "fast (43 kHz)"}),
+
+		resetCheck: widget.NewCheck("Reset", func(b bool) {}),
 	}
 
 	// Instructions message
@@ -367,6 +375,8 @@ func main() {
 
 				widget.NewLabel("ADC1 Rate: "),
 				configData.adc1Rate,
+
+				configData.resetCheck,
 			),
 
 			widget.NewButton("Create Config", func() {
@@ -386,7 +396,7 @@ func main() {
 			instructionsThree,
 			instructionsFour,
 			instructionsFive,
-			extras.loadingBar,
+			// extras.loadingBar,
 		),
 	)
 
