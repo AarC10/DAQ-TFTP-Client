@@ -172,6 +172,7 @@ func receiveFile(configData *config, extras *extras) {
 	fileString, err := os.ReadFile("config")
 	check(err, &extras.inputResponse)
 
+	// TODO: Figure out a cleaner way of implementing this
 	for _, line := range strings.Split(string(fileString), "\n") {
 		if strings.Contains(line, "ip.src") {
 			configData.srcIP.SetText(line[7:])
@@ -189,6 +190,20 @@ func receiveFile(configData *config, extras *extras) {
 			configData.adc1UDP.SetText(line[9:])
 		} else if strings.Contains(line, "udp.tcp") {
 			configData.tcpUDP.SetText(line[8:])
+		} else if strings.Contains(line, "rate.adc0") {
+			if (line[10:]) == "slow" {
+				configData.adc0Rate.SetSelectedIndex(0)
+			} else if (line[10:]) == "fast" {
+				configData.adc0Rate.SetSelectedIndex(1)
+			}
+
+			configData.adc0Rate.SetSelected("")
+		} else if strings.Contains(line, "rate.adc1") {
+			if (line[10:]) == "slow" {
+				configData.adc1Rate.SetSelectedIndex(0)
+			} else if (line[10:]) == "fast" {
+				configData.adc1Rate.SetSelectedIndex(1)
+			}
 		}
 
 	}
