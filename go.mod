@@ -1,9 +1,10 @@
-module github.com/AarC10/DAQ-Client 
+module github.com/AarC10/DAQ-Client
 
 go 1.17
 
 require (
 	fyne.io/fyne/v2 v2.1.2
+	github.com/tatsushid/go-fastping v0.0.0-20160109021039-d7bb493dee3e
 	gitlab.com/rackn/tftp/v3 v3.1.2
 )
 
@@ -19,10 +20,10 @@ require (
 	github.com/srwiley/oksvg v0.0.0-20200311192757-870daf9aa564 // indirect
 	github.com/srwiley/rasterx v0.0.0-20200120212402-85cb7272f5e9 // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
-	github.com/yuin/goldmark v1.3.8 // indirect
+	github.com/yuin/goldmark v1.4.1 // indirect
 	golang.org/x/image v0.0.0-20200430140353-33d19683fad8 // indirect
-	golang.org/x/net v0.0.0-20210903162142-ad29c8ab022f // indirect
-	golang.org/x/sys v0.0.0-20210903071746-97244b99971b // indirect
-	golang.org/x/text v0.3.6 // indirect
+	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
+	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )

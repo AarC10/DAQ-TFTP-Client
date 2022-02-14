@@ -14,6 +14,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"github.com/tatsushid/go-fastping"
 	"gitlab.com/rackn/tftp/v3"
 	"image/color"
 	"log"
@@ -50,7 +51,7 @@ type extras struct { // TODO: Brainstorm a better struct name
 	inputResponse *widget.Label
 }
 
-var TFTP_PORT = ":69"
+const TFTP_PORT = ":69"
 
 /**
 Error Handling
@@ -66,15 +67,23 @@ func check(e error, messageLabel **widget.Label) {
 Test ping an IP before receiving/uploading
 */
 func pingCheck(broadcastAddr *widget.Entry, messageLabel **widget.Label) bool {
-	pingSuccess := true
+	pingSuccess := false
+	pinger := fastping.NewPinger()
 
-	_, err := net.Dial("udp", broadcastAddr.Text+TFTP_PORT)
+	resolvedIPAddr, err := net.ResolveIPAddr("ip4:icmp", broadcastAddr.Text)
+	check(err, messageLabel)
 
-	if err != nil {
-		log.Println("Can't connect")
-		(*messageLabel).SetText("Can't connect to DAQ IP Address")
-		pingSuccess = false
+	pinger.AddIPAddr(resolvedIPAddr)
+	pinger.OnRecv = func(addr *net.IPAddr, rtt time.Duration) {
+		fmt.Printf("IP Addr: %s receive, RTT: %v\n", addr.String(), rtt)
+		pingSuccess = true
 	}
+	pinger.OnIdle = func() {
+		fmt.Println("Can't ping current IP")
+	}
+
+	err = pinger.Run()
+	check(err, messageLabel)
 
 	return pingSuccess
 }
@@ -126,7 +135,7 @@ func uploadFile(extras *extras) {
 /**
 Receives a file from the given broadcast address and inputs it into the text boxes
 */
-func receiveFile(extras *extras, configData *config) {
+func receiveFile(configData *config, extras *extras) {
 	extras.loadingBar.SetValue(0)
 
 	err := extras.broadcastAddr.Validate()
@@ -136,6 +145,7 @@ func receiveFile(extras *extras, configData *config) {
 	}
 
 	if !pingCheck(extras.broadcastAddr, &extras.inputResponse) {
+		extras.inputResponse.SetText("Unable to ping current DAQ IP")
 		return
 	}
 
@@ -449,7 +459,7 @@ func main() {
 			}),
 
 			widget.NewButton("Receive File", func() {
-				receiveFile(&extras, &configData)
+				receiveFile(&configData, &extras)
 			}),
 
 			widget.NewButton("Upload File", func() {
