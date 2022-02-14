@@ -35,7 +35,7 @@ type config struct {
 	srcUDP  *widget.Entry
 	adc0UDP *widget.Entry
 	adc1UDP *widget.Entry
-	tcpUDP  *widget.Entry
+	tcUDP   *widget.Entry
 
 	adc0Rate *widget.Select
 	adc1Rate *widget.Select
@@ -188,8 +188,8 @@ func receiveFile(configData *config, extras *extras) {
 			configData.adc0UDP.SetText(line[9:])
 		} else if strings.Contains(line, "udp.adc1") {
 			configData.adc1UDP.SetText(line[9:])
-		} else if strings.Contains(line, "udp.tcp") {
-			configData.tcpUDP.SetText(line[8:])
+		} else if strings.Contains(line, "udp.tc") {
+			configData.tcUDP.SetText(line[8:])
 		} else if strings.Contains(line, "rate.adc0") {
 			if (line[10:]) == "slow" {
 				configData.adc0Rate.SetSelectedIndex(0)
@@ -228,7 +228,7 @@ func createConfig(configData *config, extras *extras) {
 		"udp.src=" + configData.srcUDP.Text,
 		"udp.adc0=" + configData.adc0UDP.Text,
 		"udp.adc1=" + configData.adc1UDP.Text,
-		"udp.tcp=" + configData.tcpUDP.Text,
+		"udp.tc=" + configData.tcUDP.Text,
 		"rate.adc0=" + adcRateSelected(configData.adc0Rate),
 		"rate.adc1=" + adcRateSelected(configData.adc1Rate),
 	}
@@ -341,7 +341,7 @@ Factory method for creating selection box
 */
 func makeNewSelection(text string, options []string) *widget.Select {
 	newSelection := widget.NewSelect(options, func(value string) {
-		log.Println(text, "set to", value)
+		// log.Println(text, "set to", value)
 	})
 
 	return newSelection
@@ -382,7 +382,7 @@ func validateEntry(configIndex int, configData *config) bool {
 		err = configData.adc1UDP.Validate()
 
 	case 7:
-		err = configData.tcpUDP.Validate()
+		err = configData.tcUDP.Validate()
 
 	default:
 		err = nil
@@ -426,7 +426,7 @@ func main() {
 		srcUDP:  makeEntryField("Source UDP Port", "port"),
 		adc0UDP: makeEntryField("ADC0 UDP Port", "port"),
 		adc1UDP: makeEntryField("ADC1 UDP Port", "port"),
-		tcpUDP:  makeEntryField("TCP Port", "port"),
+		tcUDP:   makeEntryField("TC Port", "port"),
 
 		adc0Rate: makeNewSelection("ADC0 Rate", []string{"Slow (8 kHz)", "Fast (43 kHz)"}),
 		adc1Rate: makeNewSelection("ADC1 Rate", []string{"Slow (8 kHz)", "Fast (43 kHz)"}),
@@ -455,7 +455,7 @@ func main() {
 			configData.srcUDP,
 			configData.adc0UDP,
 			configData.adc1UDP,
-			configData.tcpUDP,
+			configData.tcUDP,
 
 			container.NewHBox(
 				widget.NewLabel("ADC0 Rate: "),
