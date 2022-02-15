@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"image/color"
 	"log"
@@ -117,18 +118,10 @@ func main() {
 	// Set and Display Content
 	window.SetContent(
 		container.NewVBox(
+
 			extras.broadcastAddr,
 
-			canvas.NewLine(color.White),
-
 			configData.srcIP,
-			configData.dstIP,
-			configData.gwIP,
-			configData.subnetIP,
-			configData.srcUDP,
-			configData.adc0UDP,
-			configData.adc1UDP,
-			configData.tcUDP,
 
 			container.NewHBox(
 				widget.NewLabel("ADC0 Rate: "),
@@ -140,7 +133,35 @@ func main() {
 				configData.resetCheck,
 			),
 
+			widget.NewAccordion(
+				widget.NewAccordionItem(
+					"Advanced Options",
+
+					container.NewVBox(
+						makeNewText("Do not modify unless you know what you are doing. Changing these options risks breaking the DAQ."),
+						configData.dstIP,
+						configData.gwIP,
+						configData.subnetIP,
+						configData.srcUDP,
+						configData.adc0UDP,
+						configData.adc1UDP,
+						configData.tcUDP,
+					)),
+			),
+
+			widget.NewAccordion(
+				widget.NewAccordionItem("Instructions",
+					container.NewVBox(
+						instructionsOne,
+						instructionsTwo,
+						instructionsThree,
+						instructionsFour,
+						instructionsFive,
+					)),
+			),
+
 			canvas.NewLine(color.White),
+			layout.NewSpacer(),
 
 			widget.NewButton("Create Config", func() {
 				createConfig(&configData, &extras)
@@ -154,15 +175,7 @@ func main() {
 				uploadFile(&extras)
 			}),
 
-			canvas.NewLine(color.White),
-
-			instructionsOne,
-			instructionsTwo,
-			instructionsThree,
-			instructionsFour,
-			instructionsFive,
 			// extras.loadingBar,
-			canvas.NewLine(color.White),
 			extras.inputResponse,
 		),
 	)
