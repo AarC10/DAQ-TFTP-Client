@@ -123,6 +123,7 @@ func main() {
 			widget.NewSeparator(),
 
 			configData.srcIP,
+			configData.dstIP,
 
 			container.NewHBox(
 				widget.NewLabel("ADC0 Rate: "),
@@ -141,7 +142,6 @@ func main() {
 
 					container.NewVBox(
 						makeNewText("Do not modify unless you know what you are doing. Changing these options risks breaking the DAQ."),
-						configData.dstIP,
 						configData.gwIP,
 						configData.subnetIP,
 						configData.srcUDP,
