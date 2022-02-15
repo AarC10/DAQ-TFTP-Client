@@ -86,6 +86,7 @@ func main() {
 		widget.NewLabel(""),
 	}
 
+	// Extras modifiers
 	extras.broadcastAddr.Validator = daqIPAddrValidator
 	extras.inputResponse.Alignment = fyne.TextAlignCenter
 
@@ -117,7 +118,7 @@ func main() {
 	// Set and Display Content
 	window.SetContent(
 		container.NewVBox(
-
+			// Basic Settings
 			extras.broadcastAddr,
 			widget.NewSeparator(),
 
@@ -133,6 +134,7 @@ func main() {
 				configData.resetCheck,
 			),
 
+			// Advanced Options dropdown
 			widget.NewAccordion(
 				widget.NewAccordionItem(
 					"Advanced Options",
@@ -149,6 +151,7 @@ func main() {
 					)),
 			),
 
+			// Instructions dropdown
 			widget.NewAccordion(
 				widget.NewAccordionItem("Instructions",
 					container.NewVBox(
@@ -163,6 +166,7 @@ func main() {
 			layout.NewSpacer(),
 			widget.NewSeparator(),
 
+			// Buttons
 			widget.NewButton("Create Config", func() {
 				createConfig(&configData, &extras)
 			}),
@@ -176,6 +180,8 @@ func main() {
 			}),
 
 			// extras.loadingBar,
+
+			// Response to user interactions
 			widget.NewSeparator(),
 			extras.inputResponse,
 		),
