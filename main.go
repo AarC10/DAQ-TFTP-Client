@@ -9,11 +9,9 @@ package main
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	"image/color"
 	"log"
 )
 
@@ -89,6 +87,7 @@ func main() {
 	}
 
 	extras.broadcastAddr.Validator = daqIPAddrValidator
+	extras.inputResponse.Alignment = fyne.TextAlignCenter
 
 	// Entries for config file
 	configData := config{
@@ -120,6 +119,7 @@ func main() {
 		container.NewVBox(
 
 			extras.broadcastAddr,
+			widget.NewSeparator(),
 
 			configData.srcIP,
 
@@ -160,8 +160,8 @@ func main() {
 					)),
 			),
 
-			canvas.NewLine(color.White),
 			layout.NewSpacer(),
+			widget.NewSeparator(),
 
 			widget.NewButton("Create Config", func() {
 				createConfig(&configData, &extras)
@@ -176,6 +176,7 @@ func main() {
 			}),
 
 			// extras.loadingBar,
+			widget.NewSeparator(),
 			extras.inputResponse,
 		),
 	)
